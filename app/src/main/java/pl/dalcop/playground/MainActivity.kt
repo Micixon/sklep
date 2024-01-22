@@ -66,56 +66,60 @@ class MainActivity : ComponentActivity() {
                     val coroutineScope = rememberCoroutineScope()
                     Column(Modifier.verticalScroll(rememberScrollState())) {
                         //text?.let { Text(it) }
-                        if(text!=null) {
+                        if (text != null) {
 //                            var count = remember {
 //                                mutableStateOf(0)
 //                            }
                             val doc = Jsoup.parse(text)
                             val title: Elements = doc.select("h1")
                             val items: Elements = doc.select("li")
-                                var count by remember {
-                                    mutableStateOf(1)
-                                }
+                            var count by remember {
+                                mutableStateOf(1)
+                            }
+                            val identified:String ="1"
 
                             for (item in items) {
                                 val description = item.text()
                                 if (description.startsWith("Przedmiot 1 - Cena: 29.99zł zł Ilość:")) {
-                                    val desiredText = description.substring(0,37)
-                                    Row{
+                                    val desiredText = description.substring(0, 37)
+                                    Row {
                                         //Text(title)
                                     }
                                     Row {
                                         Text(desiredText)
                                         Icon(imageVector = Icons.Default.KeyboardArrowLeft,
                                             contentDescription = "Zmniejsz ilość",
-                                            modifier = Modifier.clickable{count--}
+                                            modifier = Modifier.clickable { count-- }
                                         )
                                         Text(count.toString())
 
                                         Icon(imageVector = Icons.Default.KeyboardArrowRight,
-                                             contentDescription = "Zwiększ ilość",
-                                            modifier = Modifier.clickable {count++}
+                                            contentDescription = "Zwiększ ilość",
+                                            modifier = Modifier.clickable { count++ }
                                         )
-                                       Icon(imageVector = Icons.Default.ShoppingCart,
+                                        Icon(imageVector = Icons.Default.ShoppingCart,
                                             contentDescription = null,
-                                           modifier = Modifier
-                                               .fillMaxWidth()
-                                               .background(Color.White)
-                                               .clickable {
-                                                   coroutineScope.launch {
-                                                       withContext(Dispatchers.IO) {
-                                                           run()
-                                                       }
-                                                   }
-                                               }
-                                       )
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(Color.White)
+                                                .clickable {
+                                                    coroutineScope.launch {
+                                                        withContext(Dispatchers.IO) {
+                                                            run(
+                                                                counting = count,
+                                                                identify = identified
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                        )
                                     }
                                 }
                             }
 
                         }
                         Row {
-                            if(text!=null) {
+                            if (text != null) {
 //                            var count = remember {
 //                                mutableStateOf(0)
 //                            }
@@ -125,25 +129,26 @@ class MainActivity : ComponentActivity() {
                                 var count1 by remember {
                                     mutableStateOf(1)
                                 }
+                                val identified:String ="2"
 
                                 for (item in items) {
                                     val description = item.text()
                                     if (description.startsWith("Przedmiot 2 - Cena: 19.99zł zł Ilość:")) {
-                                        val desiredText = description.substring(0,37)
-                                        Row{
+                                        val desiredText = description.substring(0, 37)
+                                        Row {
                                             //Text(title)
                                         }
                                         Row {
                                             Text(desiredText)
                                             Icon(imageVector = Icons.Default.KeyboardArrowLeft,
                                                 contentDescription = "Zmniejsz ilość",
-                                                modifier = Modifier.clickable{count1--}
+                                                modifier = Modifier.clickable { count1-- }
                                             )
                                             Text(count1.toString())
 
                                             Icon(imageVector = Icons.Default.KeyboardArrowRight,
                                                 contentDescription = "Zwiększ ilość",
-                                                modifier = Modifier.clickable {count1++}
+                                                modifier = Modifier.clickable { count1++ }
                                             )
                                             Icon(imageVector = Icons.Default.ShoppingCart,
                                                 contentDescription = null,
@@ -153,7 +158,10 @@ class MainActivity : ComponentActivity() {
                                                     .clickable {
                                                         coroutineScope.launch {
                                                             withContext(Dispatchers.IO) {
-                                                                run()
+                                                                run(
+                                                                    counting = count1,
+                                                                    identify = identified
+                                                                )
                                                             }
                                                         }
                                                     }
@@ -165,7 +173,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         Row {
-                            if(text!=null) {
+                            if (text != null) {
 //                            var count = remember {
 //                                mutableStateOf(0)
 //                            }
@@ -175,27 +183,30 @@ class MainActivity : ComponentActivity() {
                                 var count2 by remember {
                                     mutableStateOf(1)
                                 }
+                                val identified:String ="3"
 
                                 for (item in items) {
                                     val description = item.text()
                                     if (description.startsWith("Przedmiot 3 - Cena: 9.99zł zł Ilość:")) {
-                                        val desiredText = description.substring(0,37)
-                                        Row{
+                                        val desiredText = description.substring(0, 37)
+                                        Row {
                                             //Text(title)
                                         }
                                         Row {
+
                                             Text(desiredText)
                                             Icon(imageVector = Icons.Default.KeyboardArrowLeft,
                                                 contentDescription = "Zmniejsz ilość",
-                                                modifier = Modifier.clickable{count2--}
+                                                modifier = Modifier.clickable { count2-- }
                                             )
                                             Text(count2.toString())
 
                                             Icon(imageVector = Icons.Default.KeyboardArrowRight,
                                                 contentDescription = "Zwiększ ilość",
                                                 modifier = Modifier
-                                                    .clickable {count2++}
+                                                    .clickable { count2++ }
                                             )
+
                                             Icon(imageVector = Icons.Default.ShoppingCart,
                                                 contentDescription = null,
                                                 modifier = Modifier
@@ -204,9 +215,13 @@ class MainActivity : ComponentActivity() {
                                                     .clickable {
                                                         coroutineScope.launch {
                                                             withContext(Dispatchers.IO) {
-                                                                run()
+                                                                run(
+                                                                    counting = count2,
+                                                                    identify = identified
+                                                                )
                                                             }
                                                         }
+
                                                     }
                                             )
                                         }
@@ -215,46 +230,59 @@ class MainActivity : ComponentActivity() {
 
                             }
                         }
-                        Row{
-                        Button(onClick = {
-                            coroutineScope.launch {
-                                withContext(Dispatchers.IO) {
-                                    text = request()
-                                }
-                            }
-                        }
-                        ) {
-
-                            Text("Zacznij")
-
-                        }
-                        var text by rememberSaveable { mutableStateOf("") }
-
+                        Row {
                             Button(onClick = {
                                 coroutineScope.launch {
                                     withContext(Dispatchers.IO) {
-                                        text = requestpurchase()
+                                        text = request()
                                     }
                                 }
                             }
+                            ) {
 
+                                Text("Zacznij")
 
-                            ){
-                                Text("Lista Zamówień")
                             }
+                        /* TODO wyswietlanie listy zakupów */
+//                            var text1 by rememberSaveable { mutableStateOf("") }
+//                            val docum = Jsoup.parse(text1)
+//                            var shoplist : Elements = docum.select("body")
+//                            Button(onClick = {
+//                                coroutineScope.launch {
+//                                    withContext(Dispatchers.IO) {
+//                                        text1 = requestpurchase()
+//                                    }
+//                                }
+//                            }
+//                            ) {
+//                                Text("Lista Zamówień")
+//                            }
+
+
+                       /* TODO przyciski wysyłają requesta tylko gdy kliknięte */
+//                            var counted = 420
+//                            var identified2 = 1
+//                            val scoping: Suspend () -> Unit = { coroutineScope.launch {
+//                            withContext(Dispatchers.IO) {
+//                                run(counting = counted, identify = identified2.toString())
+//                            }
+//                            }
+//                              Button(onClick = { LaunchedEffect(true){
+//                                  scoping()
+//                              } })
+//                                {
+//                                Text("test post id=1 amount=420")
+//                            }
                         }
                     }
 
-                    LaunchedEffect(true) {
-                        withContext(Dispatchers.IO) {
-
-                        }
                     }
                 }
             }
         }
     }
-}
+//}
+
 suspend fun request(): String {
     val client = OkHttpClient()
 
@@ -279,16 +307,15 @@ suspend fun requestpurchase(): String {
 }
 private val client = OkHttpClient()
 
-suspend  fun run(): String {
-    val postBody = """
-       """.trimMargin()
+suspend  fun run(counting:Int,identify:String): String {
     val formData = MultipartBody.Builder()
         .setType(MultipartBody.FORM)
-        .addFormDataPart("amount","")
+        .addFormDataPart("id","$identify")
+        .addFormDataPart("amount","${counting.toString()}")
         .build()
     val request = Request.Builder()
-        .url("https://playground.dudu.ovh/purchase?id=1")
-        .post(postBody.toRequestBody())
+        .url("https://playground.dudu.ovh/purchase")
+        .post(formData)
         .build()
 
     client.newCall(request).execute().use { response ->
