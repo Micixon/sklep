@@ -15,41 +15,28 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import org.jsoup.Jsoup
 import org.jsoup.select.Elements
 import pl.dalcop.playground.ui.theme.PlaygroundTheme
 import java.io.IOException
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.graphics.Color
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.MediaType
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
-
 
 
 class MainActivity : ComponentActivity() {
@@ -61,35 +48,34 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 )
-                {
-                    var text: String? by remember { mutableStateOf(null) }
-                    val coroutineScope = rememberCoroutineScope()
+                {    var text: String? by remember { mutableStateOf(null) }
                     Column(Modifier.verticalScroll(rememberScrollState())) {
-                        //text?.let { Text(it) }
-                        if (text != null) {
-//                            var count = remember {
-//                                mutableStateOf(0)
-//                            }
-                            val doc = Jsoup.parse(text)
-                            val title: Elements = doc.select("h1")
-                            val items: Elements = doc.select("li")
+
+                        var coroutineScope = rememberCoroutineScope()
+                        if (text !=null) {
+                            var connect = Jsoup.connect("https://playground.dudu.ovh").get()
+                            var doc = Jsoup.parse(connect.toString())
+                            var items: Elements = connect.select("li")
                             var count by remember {
                                 mutableStateOf(1)
                             }
                             val identified:String ="1"
-
+                            val url = "https://playground.dudu.ovh"
                             for (item in items) {
-                                val description = item.text()
-                                if (description.startsWith("Przedmiot 1 - Cena: 29.99zł zł Ilość:")) {
-                                    val desiredText = description.substring(0, 37)
+                                val sourceCode = coroutineScope.launch{withContext(Dispatchers.IO){parseSourceCode(url)} }
+                                val req = coroutineScope.launch {  withContext(Dispatchers.IO) { request() } }
+                                val description = sourceCode.toString()
                                     Row {
-                                        //Text(title)
-                                    }
-                                    Row {
-                                        Text(desiredText)
+                                        Text(description)
                                         Icon(imageVector = Icons.Default.KeyboardArrowLeft,
                                             contentDescription = "Zmniejsz ilość",
-                                            modifier = Modifier.clickable { count-- }
+                                            modifier = Modifier.clickable { if (count<=0){
+                                            count = 0
+                                            }
+                                            else {
+                                                    count--
+                                            }
+                                            }
                                         )
                                         Text(count.toString())
 
@@ -114,135 +100,30 @@ class MainActivity : ComponentActivity() {
                                                 }
                                         )
                                     }
-                                }
+
                             }
 
                         }
-                        Row {
-                            if (text != null) {
-//                            var count = remember {
-//                                mutableStateOf(0)
-//                            }
-                                val doc = Jsoup.parse(text)
-                                val title: Elements = doc.select("h1")
-                                val items: Elements = doc.select("li")
-                                var count1 by remember {
-                                    mutableStateOf(1)
-                                }
-                                val identified:String ="2"
 
-                                for (item in items) {
-                                    val description = item.text()
-                                    if (description.startsWith("Przedmiot 2 - Cena: 19.99zł zł Ilość:")) {
-                                        val desiredText = description.substring(0, 37)
-                                        Row {
-                                            //Text(title)
-                                        }
-                                        Row {
-                                            Text(desiredText)
-                                            Icon(imageVector = Icons.Default.KeyboardArrowLeft,
-                                                contentDescription = "Zmniejsz ilość",
-                                                modifier = Modifier.clickable { count1-- }
-                                            )
-                                            Text(count1.toString())
 
-                                            Icon(imageVector = Icons.Default.KeyboardArrowRight,
-                                                contentDescription = "Zwiększ ilość",
-                                                modifier = Modifier.clickable { count1++ }
-                                            )
-                                            Icon(imageVector = Icons.Default.ShoppingCart,
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .background(Color.White)
-                                                    .clickable {
-                                                        coroutineScope.launch {
-                                                            withContext(Dispatchers.IO) {
-                                                                run(
-                                                                    counting = count1,
-                                                                    identify = identified
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                            )
-                                        }
-                                    }
-                                }
 
                             }
                         }
-                        Row {
-                            if (text != null) {
-//                            var count = remember {
-//                                mutableStateOf(0)
-//                            }
-                                val doc = Jsoup.parse(text)
-                                val title: Elements = doc.select("h1")
-                                val items: Elements = doc.select("li")
-                                var count2 by remember {
-                                    mutableStateOf(1)
-                                }
-                                val identified:String ="3"
-
-                                for (item in items) {
-                                    val description = item.text()
-                                    if (description.startsWith("Przedmiot 3 - Cena: 9.99zł zł Ilość:")) {
-                                        val desiredText = description.substring(0, 37)
-                                        Row {
-                                            //Text(title)
-                                        }
-                                        Row {
-
-                                            Text(desiredText)
-                                            Icon(imageVector = Icons.Default.KeyboardArrowLeft,
-                                                contentDescription = "Zmniejsz ilość",
-                                                modifier = Modifier.clickable { count2-- }
-                                            )
-                                            Text(count2.toString())
-
-                                            Icon(imageVector = Icons.Default.KeyboardArrowRight,
-                                                contentDescription = "Zwiększ ilość",
-                                                modifier = Modifier
-                                                    .clickable { count2++ }
-                                            )
-
-                                            Icon(imageVector = Icons.Default.ShoppingCart,
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .background(Color.White)
-                                                    .clickable {
-                                                        coroutineScope.launch {
-                                                            withContext(Dispatchers.IO) {
-                                                                run(
-                                                                    counting = count2,
-                                                                    identify = identified
-                                                                )
-                                                            }
-                                                        }
-
-                                                    }
-                                            )
-                                        }
-                                    }
-                                }
-
-                            }
-                        }
-                        Row {
-                            Button(onClick = {
-                                coroutineScope.launch {
-                                    withContext(Dispatchers.IO) {
-                                        text = request()
-                                    }
-                                }
-                            }
-                            ) {
-
-                                Text("Zacznij")
-
-                            }
+            var text: String? by remember { mutableStateOf("") }
+            val coroutineScope = rememberCoroutineScope()
+//            Row {
+//                Button(onClick = {
+//                    coroutineScope.launch {
+//                        withContext(Dispatchers.IO) {
+//                            text = request()
+////                            print("dupa")
+//                        }
+//                    }
+//                }
+//                ) {
+//                    Text("Zacznij")
+//                }
+//            }
                         /* TODO wyswietlanie listy zakupów */
 //                            var text1 by rememberSaveable { mutableStateOf("") }
 //                            val docum = Jsoup.parse(text1)
@@ -278,27 +159,18 @@ class MainActivity : ComponentActivity() {
 
                     }
                 }
-            }
-        }
-    }
+//            }
+//        }
+//    }
 //}
+
+
 
 suspend fun request(): String {
     val client = OkHttpClient()
 
     val request: Request = Request.Builder()
         .url("https://playground.dudu.ovh")
-        .build()
-
-    return client.newCall(request).execute().body?.string()?: "nie dziala"
-
-
-}
-suspend fun requestpurchase(): String {
-    val client = OkHttpClient()
-
-    val request: Request = Request.Builder()
-        .url("https://playground.dudu.ovh/purchase")
         .build()
 
     return client.newCall(request).execute().body?.string()?: "nie dziala"
@@ -325,19 +197,17 @@ suspend  fun run(counting:Int,identify:String): String {
     }
     return client.newCall(request).execute().body?.string()?: "nie dziala"
 }
-//fun postRequestWithFormData() {
-//    val client = OkHttpClient()
-//
-//
-//
-//    val requestBody = RequestBody.create(MediaType.parse("multipart/form-data"), formData)
-//
-//    val request = Request.Builder()
-//        .url("https://example.com/post")
-//        .post(requestBody)
-//        .build()
-//
-//    val call = client.newCall(request)
-//    val response = call.execute()
-//}
+suspend fun parseSourceCode(url: String): String {
+    val client = OkHttpClient()
+    val request = Request.Builder()
+        .url(url)
+        .build()
 
+    val response = client.newCall(request).execute()
+    val htmlContent = response.body?.string() ?: "Failed to fetch HTML"
+    val doc = Jsoup.parse(htmlContent)
+    doc.head()
+    val sourceCode = doc.select("body").text()
+
+    return sourceCode
+}
