@@ -106,7 +106,7 @@ class MainActivity : ComponentActivity() {
                                             Text(desiredText)
                                             Icon(imageVector = Icons.Default.KeyboardArrowLeft,
                                                 contentDescription = "Zmniejsz ilość",
-                                                modifier = Modifier.clickable { if(!isRequestSent){ if(counts <= 1){counts=1}else{counts--}} }
+                                                modifier = Modifier.clickable { if(counts <= 1){counts=1}else{counts--} }
                                             )
                                             Text(counts.toString())
 
