@@ -1,10 +1,6 @@
 package pl.dalcop.playground
 
-import android.graphics.Color
 import android.os.Bundle
-import android.os.NetworkOnMainThreadException
-import android.util.Log
-import android.widget.Switch
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -14,43 +10,48 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.sharp.CheckCircle
+import androidx.compose.material.icons.sharp.Close
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.fasterxml.jackson.core.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.*
 import okhttp3.ResponseBody.Companion.toResponseBody
 import okio.IOException
+import org.json.JSONObject
 import org.jsoup.*
 import org.jsoup.select.Elements
 import pl.dalcop.playground.ui.theme.PlaygroundTheme
@@ -67,11 +68,17 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 )
                 {
+
+                    val rember = rememberCompositionContext()
+                    var r: String by remember { mutableStateOf("") }
                     var clicked by remember{mutableStateOf(false)}
                     var text: String? by remember { mutableStateOf(null) }
                     val coroutineScope = rememberCoroutineScope()
                     var checked by remember { mutableStateOf(false) }
-                    var show: Switch
+                    var show by remember { mutableStateOf(true)}
+                    val checker = remember { mutableStateOf(false) }
+                    var checking:Boolean= false
+                    var listshop:String? by remember { mutableStateOf(null) }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
@@ -135,41 +142,41 @@ class MainActivity : ComponentActivity() {
                                                 .clickable {
                                                     coroutineScope.launch {
                                                         withContext(Dispatchers.IO) {
-                                                            post(
-                                                                counting = counts,
-                                                                identify = id.toString(),
-                                                                posturl = "https://playground.dudu.ovh/purchase"
-                                                            )
+                                                            r = interceptor(
+                                                                url = "https://playground.dudu.ovh/purchase",
+                                                                IdValue = id.toString(),
+                                                                AmountValue = counts.toString()
+                                                            ) ?: "kurwa"
                                                         }
                                                     }
                                                     clicked = true
-                                                    Log.d("huj", "$clicked")
                                                 }
                                         )
-                                        if (clicked) {
-                                            AlertDialog(
-                                                onClose = {
-                                                    clicked = false
-                                                }
-                                            )
-                                        }
+
                                     }
                                 }
                             }
+                        }
+                        if(clicked==true){
+                            MinimalDialog(onClose = {clicked = false}, textcontent = r)
 
                         }
-                        Row(modifier = Modifier.wrapContentSize(Alignment.Center)) {
-                            Button(onClick = {
+                        if(show==true){
+                            Row(modifier = Modifier.wrapContentSize(Alignment.Center)) {
+                                Button(onClick = {
                                     coroutineScope.launch {
                                         withContext(Dispatchers.IO) {
                                             text = get(url = "https://playground.dudu.ovh")
                                         }
                                     }
+                                    show=false
                                 }
                                 )
                                 {
                                     Text("Zacznij")
                                 }
+
+                            }
                         }
 
                     }
@@ -180,36 +187,47 @@ class MainActivity : ComponentActivity() {
     }
 
 @Composable
-fun AlertDialog(onClose: () -> Unit) {
-
-    Dialog(
-        onDismissRequest = { /*onClose()*/ }
-    ) {
-        AlertDialog(
-            onDismissRequest = { /*onClose()*/ },
-            title = { Text("Przeprowadzono transakcje pomyślnie") },
-            text = { Text("Możesz sprawdzić koszyk") },
-            confirmButton = {
-                TextButton(
-                    onClick = { onClose() }
-                ) {
-                    Text("Dobrze")
-                }
-            }
-        )
+fun MinimalDialog(onClose: () -> Unit,textcontent:String) {
+    Dialog(onDismissRequest = { onClose() }) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Text(
+                overflow = TextOverflow.Ellipsis,
+                softWrap = true,
+                maxLines = 3,
+                text = "$textcontent\n Przesuń w lewo lub w prawo by zamknąć",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .wrapContentSize(Alignment.Center),
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
+
+
 @Composable
-fun Switch(checked:Boolean) {
-
+fun Switcher(checker: Boolean){
     var checked by remember { mutableStateOf(true) }
-
     Switch(
+        enabled = checker==true,
         checked = checked,
         onCheckedChange = {
             checked = it
 
-        }
+        },
+        colors = SwitchDefaults.colors(
+            checkedThumbColor = MaterialTheme.colorScheme.primary,
+            checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+            uncheckedThumbColor = MaterialTheme.colorScheme.secondary,
+            uncheckedTrackColor = MaterialTheme.colorScheme.secondaryContainer,
+        ),
+        thumbContent = { Icon(imageVector = Icons.Sharp.CheckCircle, contentDescription = null) }
     )
 }
 private val client = OkHttpClient()
@@ -232,37 +250,23 @@ suspend fun post(counting:Int, identify:String, posturl:String): String {
 
     return client.newCall(request).execute().use {response:Response -> String()}
 }
-suspend fun interceptor(url: String,Id:String,IdValue:String,IdAmount:String,AmountValue:String) {
+suspend fun interceptor(url: String,IdValue:String,AmountValue:String): String? {
     val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(TrafficInterceptor())
         .build()
 
     val formData = MultipartBody.Builder()
         .setType(MultipartBody.FORM)
-        .addFormDataPart(Id,IdValue)
-        .addFormDataPart(IdAmount,AmountValue)
+        .addFormDataPart("id",IdValue)
+        .addFormDataPart("amount",AmountValue)
         .build()
     val request: Request = Request.Builder()
         .url(url)
         .post(formData)
         .build()
-    try {
-        val response: Response = client.newCall(request).execute()
+    val response: Response = client.newCall(request).execute()
+    return response.body?.string()?.let { JSONObject(it).getString("message") }
 
-        println("Response Code: ${ when (response.code) {
-            200 -> { "Handle Success" }
-            400 -> { "Show Bad Request Error Message" }
-            401 -> { "Show Unauthorized Error Message" }
-            403 -> { "Show Forbidden Message" }
-            404 -> { "Show Not Found Message" }
-            500 -> { "Show Internal Server Error Message" }
-            502 -> { "Show Bad Gateway Error Message" }
-            503 -> { "Show Service Unavailable Message" }
-            else -> { "Handle Other Response Code: ${response.code}" }
-        }}")
-    } catch (e: IOException) {
-        e.printStackTrace()
-    }
 }
 class TrafficInterceptor : Interceptor {
     @Throws(IOException::class)
@@ -271,9 +275,12 @@ class TrafficInterceptor : Interceptor {
         val response: Response = chain.proceed(request)
         val responseBody: ResponseBody? = response.body
         val responseBodyString: String = responseBody?.string() ?: ""
+        val responsed = responseBodyString
         println("Response Body: $responseBodyString")
         return response.newBuilder()
             .body(responseBodyString.toResponseBody(responseBody?.contentType()))
             .build()
     }
+
 }
+
