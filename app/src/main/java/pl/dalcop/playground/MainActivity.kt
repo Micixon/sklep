@@ -1,57 +1,62 @@
 package pl.dalcop.playground
 
+import android.graphics.Color
 import android.os.Bundle
+import android.os.NetworkOnMainThreadException
+import android.util.Log
+import android.widget.Switch
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.window.Dialog
+import com.fasterxml.jackson.core.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.jsoup.Jsoup
+import okhttp3.*
+import okhttp3.ResponseBody.Companion.toResponseBody
+import okio.IOException
+import org.jsoup.*
 import org.jsoup.select.Elements
 import pl.dalcop.playground.ui.theme.PlaygroundTheme
-import java.io.IOException
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.graphics.Color
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.MediaType
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
 
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,160 +67,213 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 )
                 {
+                    var clicked by remember{mutableStateOf(false)}
                     var text: String? by remember { mutableStateOf(null) }
                     val coroutineScope = rememberCoroutineScope()
-                    var isRequestSent = false
-                    Column(Modifier.verticalScroll(rememberScrollState())) {
+                    var checked by remember { mutableStateOf(false) }
+                    var show: Switch
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState())
+                            .fillMaxSize()
+
+                    ) {
                         if (text != null) {
                             val doc = Jsoup.parse(text)
                             val items: Elements = doc.select("li")
+
                             var count by remember {
                                 mutableStateOf(1)
                             }
-//                            /*próba wypisania countów za pomocą arrayów*/
-//                            var count1 by remember {
-//                                mutableStateOf(1)
-//                            }
-//                            var count2 by remember {
-//                                mutableStateOf(1)
-//                            }
-//                            var identified = arrayOf("1","2","3")
-//                            var counted = count;count1;count2;
+
                             val ids = mutableListOf<Int>()
-                                for (item in items) {
-                                    var currentItemCount = items.indexOf(item) + 1
-                                    var id = currentItemCount
+                            for (item in items) {
+                                var currentItemCount = items.indexOf(item) + 1
+                                var id = currentItemCount
 
-                                    ids.add(id)
-
-                                    var counted by remember{ mutableStateOf(1)}
-                                    while (counted < ids.size) {
-                                        if (ids[counted] == null) {
-                                            ids[counted] = count
-                                            break
-                                        }
-                                        counted++
+                                ids.add(id)
+                                var counted: Int = 1
+                                while (counted < ids.size) {
+                                    if (true) {
+                                        ids[counted] = count
+                                        break
                                     }
-                                    var counts by remember {
-                                        mutableStateOf(1)
-                                    }
-                                    val description = item.text()
-                                    if (description.startsWith("Przedmiot ")) {
-                                        val desiredText = description.substring(0, 37)
-                                        Row {
-                                            Text(desiredText)
-                                            Icon(imageVector = Icons.Default.KeyboardArrowLeft,
-                                                contentDescription = "Zmniejsz ilość",
-                                                modifier = Modifier.clickable { if(!isRequestSent){ if(counts <= 1){counts=1}else{counts--}} }
-                                            )
-                                            Text(counts.toString())
+                                    counted++
+                                }
+                                var counts by remember {
+                                    mutableStateOf(1)
+                                }
+                                val description = item.text()
+                                if (description.startsWith("Przedmiot ")) {
+                                    val desiredText = description.substring(0, 37)
+                                    Row {
+                                        Text(desiredText)
+                                        Icon(imageVector = Icons.Default.KeyboardArrowLeft,
+                                            contentDescription = "Zmniejsz ilość",
+                                            modifier = Modifier.clickable {
+                                                if (counts <= 1) {
+                                                    counts = 1
+                                                } else {
+                                                    counts--
+                                                }
+                                            }
+                                        )
+                                        Text(counts.toString())
 
-                                            Icon(imageVector = Icons.Default.KeyboardArrowRight,
-                                                contentDescription = "Zwiększ ilość",
-                                                modifier = Modifier.clickable { counts++ }
-                                            )
-                                            Icon(imageVector = Icons.Default.ShoppingCart,
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .background(Color.Green)
-                                                    .clickable {
-                                                        /* TODO wprowadzenie launched effect albo innego rozwiązania by request nie był wysyłany 2 razy */
-                                                        coroutineScope.launch {
-                                                            withContext(Dispatchers.IO) {
-                                                                run(
-                                                                    counting = counts,
-                                                                    identify = id.toString()
-                                                                )
-
-                                                            }
+                                        Icon(imageVector = Icons.Default.KeyboardArrowRight,
+                                            contentDescription = "Zwiększ ilość",
+                                            modifier = Modifier.clickable { counts++ }
+                                        )
+                                        Icon(imageVector = Icons.Default.ShoppingCart,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.surfaceTint,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(MaterialTheme.colorScheme.background)
+                                                .clickable {
+                                                    coroutineScope.launch {
+                                                        withContext(Dispatchers.IO) {
+                                                            post(
+                                                                counting = counts,
+                                                                identify = id.toString(),
+                                                                posturl = "https://playground.dudu.ovh/purchase"
+                                                            )
                                                         }
                                                     }
+                                                    clicked = true
+                                                    Log.d("huj", "$clicked")
+                                                }
+                                        )
+                                        if (clicked) {
+                                            AlertDialog(
+                                                onClose = {
+                                                    clicked = false
+                                                }
                                             )
                                         }
                                     }
                                 }
+                            }
 
                         }
-                        Row {
+                        Row(modifier = Modifier.wrapContentSize(Alignment.Center)) {
                             Button(onClick = {
-                                coroutineScope.launch {
-                                    withContext(Dispatchers.IO) {
-                                        text = request()
+                                    coroutineScope.launch {
+                                        withContext(Dispatchers.IO) {
+                                            text = get(url = "https://playground.dudu.ovh")
+                                        }
                                     }
                                 }
-                            }
-                            ) {
-
-                                Text("Zacznij")
-
-                            }
-                            /* TODO wyswietlanie listy zakupów */
-//                            var text1 by rememberSaveable { mutableStateOf("") }
-//                            val docum = Jsoup.parse(text1)
-//                            var shoplist : Elements = docum.select("body")
-//                            Button(onClick = {
-//                                coroutineScope.launch {
-//                                    withContext(Dispatchers.IO) {
-//                                        text1 = requestpurchase()
-//                                    }
-//                                }
-//                            }
-//                            ) {
-//                                Text("Lista Zamówień")
-//                            }
-
-
-                            /* TODO przyciski wysyłają requesta tylko gdy kliknięte */
-//                            var counted = 420
-//                            var identified2 = 1
-//                            val scoping: Suspend () -> Unit = { coroutineScope.launch {
-//                            withContext(Dispatchers.IO) {
-//                                run(counting = counted, identify = identified2.toString())
-//                            }
-//                            }
-//                              Button(onClick = { LaunchedEffect(true){
-//                                  scoping()
-//                              } })
-//                                {
-//                                Text("test post id=1 amount=420")
-//                            }
+                                )
+                                {
+                                    Text("Zacznij")
+                                }
                         }
-                    }
 
+                    }
+                }
                 }
             }
         }
     }
+
+@Composable
+fun AlertDialog(onClose: () -> Unit) {
+
+    Dialog(
+        onDismissRequest = { /*onClose()*/ }
+    ) {
+        AlertDialog(
+            onDismissRequest = { /*onClose()*/ },
+            title = { Text("Przeprowadzono transakcje pomyślnie") },
+            text = { Text("Możesz sprawdzić koszyk") },
+            confirmButton = {
+                TextButton(
+                    onClick = { onClose() }
+                ) {
+                    Text("Dobrze")
+                }
+            }
+        )
+    }
 }
-//}
+@Composable
+fun Switch(checked:Boolean) {
+
+    var checked by remember { mutableStateOf(true) }
+
+    Switch(
+        checked = checked,
+        onCheckedChange = {
+            checked = it
+
+        }
+    )
+}
 private val client = OkHttpClient()
-suspend fun request(): String {
+suspend fun get(url:String): String {
     val request: Request = Request.Builder()
-        .url("https://playground.dudu.ovh")
-        .build()
-    return client.newCall(request).execute().body?.string()?: "nie dziala"
-}suspend fun requestpurchase(): String {
-    val request: Request = Request.Builder()
-        .url("https://playground.dudu.ovh/purchase")
+        .url(url)
         .build()
     return client.newCall(request).execute().body?.string()?: "nie dziala"
 }
-suspend  fun run(counting:Int,identify:String): String {
+suspend fun post(counting:Int, identify:String, posturl:String): String {
     val formData = MultipartBody.Builder()
         .setType(MultipartBody.FORM)
         .addFormDataPart("id","$identify")
         .addFormDataPart("amount","${counting.toString()}")
         .build()
     val request = Request.Builder()
-        .url("https://playground.dudu.ovh/purchase")
+        .url(posturl)
         .post(formData)
         .build()
 
-    client.newCall(request).execute().use { response ->
-        if (!response.isSuccessful) throw IOException("Unexpected code $response")
+    return client.newCall(request).execute().use {response:Response -> String()}
+}
+suspend fun interceptor(url: String,Id:String,IdValue:String,IdAmount:String,AmountValue:String) {
+    val client: OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(TrafficInterceptor())
+        .build()
 
-        println(response.body!!.string())
+    val formData = MultipartBody.Builder()
+        .setType(MultipartBody.FORM)
+        .addFormDataPart(Id,IdValue)
+        .addFormDataPart(IdAmount,AmountValue)
+        .build()
+    val request: Request = Request.Builder()
+        .url(url)
+        .post(formData)
+        .build()
+    try {
+        val response: Response = client.newCall(request).execute()
+
+        println("Response Code: ${ when (response.code) {
+            200 -> { "Handle Success" }
+            400 -> { "Show Bad Request Error Message" }
+            401 -> { "Show Unauthorized Error Message" }
+            403 -> { "Show Forbidden Message" }
+            404 -> { "Show Not Found Message" }
+            500 -> { "Show Internal Server Error Message" }
+            502 -> { "Show Bad Gateway Error Message" }
+            503 -> { "Show Service Unavailable Message" }
+            else -> { "Handle Other Response Code: ${response.code}" }
+        }}")
+    } catch (e: IOException) {
+        e.printStackTrace()
     }
-    return client.newCall(request).execute().body?.string()?: "nie dziala jak natura nie chciala"
+}
+class TrafficInterceptor : Interceptor {
+    @Throws(IOException::class)
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request: Request = chain.request()
+        val response: Response = chain.proceed(request)
+        val responseBody: ResponseBody? = response.body
+        val responseBodyString: String = responseBody?.string() ?: ""
+        println("Response Body: $responseBodyString")
+        return response.newBuilder()
+            .body(responseBodyString.toResponseBody(responseBody?.contentType()))
+            .build()
+    }
 }
