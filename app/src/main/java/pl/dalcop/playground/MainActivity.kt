@@ -1,58 +1,94 @@
 package pl.dalcop.playground
 
 import android.os.Bundle
+import android.text.TextUtils.replace
+import android.text.TextUtils.substring
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.twotone.Delete
+import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.FloatingActionButtonElevation
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemColors
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ShapeDefaults
+import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.LinearGradient
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.Popup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -75,9 +111,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             PlaygroundTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize()
-                    .fillMaxHeight()
-                    .fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .fillMaxHeight()
+                        .fillMaxWidth()
                     ,color = MaterialTheme.colorScheme.background
                 )
                 {
@@ -88,41 +125,84 @@ class MainActivity : ComponentActivity() {
                     var clicked by remember{mutableStateOf(false)}
                     var checked by remember { mutableStateOf(false) }
                     var show by remember { mutableStateOf(true)}
-                    val checker:Boolean =false
-                    var checking:Boolean= false
+                    val coroutineScope = rememberCoroutineScope()
+                    val checker:Boolean = false
+                    var checking:Boolean = false
                     var listshop:String? by remember { mutableStateOf(null) }
                     Column(
                         modifier = Modifier
                             .verticalScroll(rememberScrollState())
                             .fillMaxSize()
+                            .padding(3.dp)
 
                     ) {
                         var show by remember {
                             mutableStateOf(true)
                         }
-                        var tabIndex by remember { mutableStateOf(0) }
-                        val tabs = listOf("Sklep", "Koszyk")
-
-                        TabRow(selectedTabIndex = tabIndex) {
-                            tabs.forEachIndexed { index, title ->
-                                Tab(text = { Text(title) },
-                                    selected = tabIndex == index,
-                                    onClick = { tabIndex = index }
-                                )
-                            }
-                        }
-                        when (tabIndex) {
+                        Arrangement.Bottom
+                        var selectedItem by remember { mutableIntStateOf(0) }
+                        val items = listOf("Zamówienia", "Koszyk")
+                        when (selectedItem) {
                             0 -> Shop(text = text, r = r, clicked = clicked,show=show )
                             1 -> ShoppingCart(text=text,r = r,clicked=clicked,show=show)
                         }
 
+                        NavigationBar(modifier= Modifier
+                            .fillMaxHeight(),
+                            containerColor = MaterialTheme.colorScheme.background
+                        ) {
+                            items.forEachIndexed { index, item ->
+                                NavigationBarItem(
+                                    icon = {if(index == 0){Icon(Icons.Filled.Menu,contentDescription = item)}else if(index == 1){Icon(Icons.Filled.ShoppingCart,contentDescription = item)} },
+                                    label = { Text(item) },
+                                    selected = selectedItem == index,
+                                    onClick = { selectedItem = index },
+                                    modifier = Modifier
+
+                                )
+                            }
+
+                        }
+                        Arrangement.Bottom
+
+
+
                     }
+//                    Row(
+//                        Modifier
+//                            .fillMaxWidth()
+//                            .padding(16.dp),
+//                        verticalAlignment = Alignment.Bottom,
+//                        horizontalArrangement = Arrangement.End){
+//
+//                        SmallFAB {
+//                            coroutineScope.launch {
+//                                withContext(Dispatchers.IO){
+//                                    post("https://playground.dudu.ovh/reset")
+//                                }
+//                            }
+//                        }
+//                    }
                 }
                 }
             }
         }
     }
+@Composable
+fun RowScope.NavigationBarItem(
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    label: (@Composable () -> Unit)? = null,
+    alwaysShowLabel: Boolean = true,
+    colors: NavigationBarItemColors = NavigationBarItemDefaults.colors(),
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
+): Unit {
 
+
+}
 
 @Composable
 fun ShoppingCart(text: String?,r: String?,clicked: Boolean,show: Boolean){
@@ -173,63 +253,121 @@ fun ShoppingCart(text: String?,r: String?,clicked: Boolean,show: Boolean){
                 var isvisible by remember {
                     mutableStateOf(true)
                 }
-                Row(Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.fillMaxSize()){
+                    Row(Modifier
+                        .fillMaxSize(),
+                        horizontalArrangement =
+                        if(desiredText.contains(Regex("Przyjęte"))) {
+                            Arrangement.spacedBy(125.dp)}
+                        else{
+                            Arrangement.spacedBy(90.dp)}) {
 
-                    displayTextBasedOnCondition(desiredText = desiredText)
-                    if(desiredText.contains(Regex("Usunięte"))) {
-                       isvisible = false
-                   }
-                    else {
-                        isvisible = true
-                    }
-                    AnimatedVisibility(visible = isvisible) {
-                        Button(
-                               onClick = {
-                                    coroutineScope.launch {
-                                        withContext(Dispatchers.IO) {
-                                            r = deleter(
-                                                url = "https://playground.dudu.ovh/delete?id=$id",
-                                            ) ?: "kurwa"
-                                        }
-                                    }
-                                    clicked = true
-                                    checker = true
-                                    isvisible= false
-                                }
-                            )
-                            {
-                                Text(text = "Usuń",)
-                            }
+                        displayTextBasedOnCondition(desiredText = desiredText)
+                        if(desiredText.contains(Regex("Usunięte"))) {
+                            isvisible = false
                         }
-                    FloatingActionButton(
-                        modifier = Modifier
-                        .padding(16.dp)
-                        .size(56.dp)
-                        .background(MaterialTheme.colorScheme.primary, CircleShape)
-                        .padding(16.dp)
-                        .align(Alignment.Bottom)
+                        else {
+                            isvisible = true
+                        }
 
-                        ,onClick = { coroutineScope.launch{ withContext(Dispatchers.IO){
-                            post(posturl = "https://playground.dudu.ovh/reset")
-                        } } },
-                    ) {
-                        Icon(imageVector = Icons.Filled.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.surfaceTint)
+
+                        AnimatedVisibility(visible = isvisible) {
+                            Icon(imageVector = Icons.Filled.Delete,
+                                null, modifier = Modifier
+                                    .clickable {
+                                        coroutineScope.launch {
+                                            withContext(Dispatchers.IO) {
+                                                r = deleter(
+                                                    url = "https://playground.dudu.ovh/delete?id=$id",
+                                                ) ?: "kurwa"
+                                            }
+                                        }
+                                        clicked = true
+                                        checker = true
+                                        isvisible = false
+                                    }
+                                    .size(49.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.inversePrimary,
+                                        shape = ShapeDefaults.Large
+                                    ), tint = MaterialTheme.colorScheme.surfaceTint
+
+                            )
+
+                        }
+
+                        if (clicked==true){
+                            r?.let { MinimalDialog(onClose ={clicked=false}, textcontent = it)}
+                        }
+
                     }
-                    if (clicked==true){
-                    r?.let { MinimalDialog(onClose ={clicked=false}, textcontent = it) }
-                }
+
 
                 }
+
+
             }
+
         }
+
+    }
+
+}
+@Composable
+fun SmallFAB(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = { onClick() },
+        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.secondary,
+        shape = CircleShape,
+
+        ) {
+        Icon(Icons.TwoTone.Refresh, "Refresh shopping list ")
     }
 }
 
-
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun popup(){
+fun popup(textcontent: String,clicked: Boolean){
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    Scaffold(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .padding(16.dp),
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                text = { Text(textcontent) },
+                icon = { Icon(Icons.Filled.Info, contentDescription = "") },
+                onClick = {
+                    scope.launch {
+                        val result = snackbarHostState
+                            .showSnackbar(
+                                message = textcontent,
+                                actionLabel = "Wykonano akcję",
+                                // Defaults to SnackbarDuration.Short
+                                duration = SnackbarDuration.Indefinite
+                            )
+                        when (result) {
+                            SnackbarResult.ActionPerformed -> {
+                                /* Handle snackbar action performed */
+                            }
+                            SnackbarResult.Dismissed -> {
+                                /* Handle snackbar dismissed */
+                            }
+                        }
+                    }
+                }
+            )
+        }
+    ) { contentPadding ->
+        // Screen content
+    }
 }
 @Composable
 fun Shop(text:String?,r:String?,clicked:Boolean,show:Boolean){
@@ -276,14 +414,22 @@ fun Shop(text:String?,r:String?,clicked:Boolean,show:Boolean){
             val description = item.text()
             if (description.startsWith("Przedmiot ")) {
                 val desiredText = description.substring(0, 37)
-                Row {
+                val betterdesiredtxt1 = description.substring(0,13)
+                val betterdesiredtxt2 = description.substring(13).replaceFirst(" ","\n",ignoreCase = false).replaceAfter("zł","")
+                val betterdesiredtxt = betterdesiredtxt1 + betterdesiredtxt2
+                val ulttext = betterdesiredtxt.replace("Ilość: Kup","",ignoreCase = false)
+                Row(horizontalArrangement = if(ulttext.length >= 27){Arrangement.spacedBy(35.dp)}else{Arrangement.spacedBy(36.dp)}
+                ,modifier=Modifier
+                        .padding(3.dp)
+
+                    ,verticalAlignment = Alignment.Top) {
                     Box(
                         Modifier
                             .fillMaxHeight()
                             .background(
                                 MaterialTheme.colorScheme.inversePrimary, shape = CircleShape
                             )){
-                    Text(desiredText, fontSize = TextUnit(18F, TextUnitType.Sp))
+                    Text(ulttext, fontSize = TextUnit(18F, TextUnitType.Sp), textAlign = TextAlign.Center)
                     }
                     Icon(imageVector = Icons.Default.KeyboardArrowLeft,
                         contentDescription = "Zmniejsz ilość",
@@ -296,10 +442,14 @@ fun Shop(text:String?,r:String?,clicked:Boolean,show:Boolean){
                                     counts--
                                 }
                             }
-                            .background(MaterialTheme.colorScheme.background)
+                            .background(MaterialTheme.colorScheme.background, shape = CircleShape)
+                            .size(36.dp)
+
+
+
 
                     )
-                    Text(counts.toString(), fontSize = TextUnit(18F, TextUnitType.Sp)
+                    Text(counts.toString(), fontSize = TextUnit(30F, TextUnitType.Sp)
                     )
 
                     Icon(imageVector = Icons.Default.KeyboardArrowRight,
@@ -308,16 +458,21 @@ fun Shop(text:String?,r:String?,clicked:Boolean,show:Boolean){
                         modifier = Modifier
                             .clickable { counts++ }
                             .background(MaterialTheme.colorScheme.background)
+                            .size(36.dp)
 
 
                     )
                     Icon(imageVector = Icons.Default.ShoppingCart,
                         contentDescription = null,
+
                         tint = MaterialTheme.colorScheme.surfaceTint,
                         modifier = Modifier
-                            .fillMaxWidth()
+
                             .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.background)
+                            .background(MaterialTheme.colorScheme.onPrimary, shape = CircleShape)
+                            .size(36.dp)
+
+
                             .clickable {
                                 coroutineScope.launch {
                                     withContext(Dispatchers.IO) {
